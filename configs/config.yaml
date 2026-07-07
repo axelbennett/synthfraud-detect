@@ -1,0 +1,53 @@
+data:
+  raw_dir: "data/raw/cardd"
+  synthetic_dir: "data/synthetic"
+  huggingface_dataset: "harpreetsahota/CarDD"
+  image_size: 224
+  train_split: 0.7
+  val_split: 0.15
+  test_split: 0.15
+  # generator held out entirely from training, used only for the
+  # generalization test set (see docs on why this matters)
+  held_out_generator: "dalle"
+
+synthetic_generation:
+  generators:
+    - name: "stable_diffusion_xl"
+      model_id: "stabilityai/stable-diffusion-xl-base-1.0"
+      n_images: 1000
+    - name: "dalle"
+      model_id: "dall-e-3"
+      n_images: 500
+  damage_categories:
+    - dent
+    - scratch
+    - crack
+    - glass_shatter
+    - lamp_broken
+    - tire_flat
+  img2img_edit_fraction: 0.25   # fraction of synthetic set that is real photo + AI edit
+
+model:
+  backbone: "resnet50"          # simple, strong baseline; swap for EfficientNet/ViT later
+  pretrained: true
+  num_classes: 2                # real vs AI-generated
+  learning_rate: 0.0001
+  batch_size: 32
+  epochs: 20
+  device: "cuda"                # falls back to cpu if unavailable
+
+semantic_check:
+  model: "claude-sonnet-4-6"
+  max_tokens: 500
+
+fusion:
+  weights:
+    forensic_score: 0.5
+    metadata_score: 0.2
+    semantic_score: 0.3
+  # scores above this route to human review rather than auto-clear
+  review_threshold: 0.4
+
+api:
+  host: "0.0.0.0"
+  port: 8000
